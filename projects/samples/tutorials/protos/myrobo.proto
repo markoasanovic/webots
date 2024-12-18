@@ -1,33 +1,171 @@
 #VRML_SIM R2024a utf8
-# This PROTO defines a red robot with a simple two-segment robotic arm on top.
+# This PROTO defines a red 4-wheeled robot with a robotic arm on top and two distance sensors at the front.
 
-PROTO MyRedArmRobot [
-  field SFVec3f    translation   0 0 0
-  field SFRotation rotation      0 0 1 0
-  field SFFloat    bodyMass      1
+PROTO RedFourWheelsArmRobot [
+  field SFVec3f    translation  0 0 0.04
+  field SFRotation rotation     0 0 1 0
+  field SFFloat    bodyMass     1
+  field SFString   controller   "four_wheels_collision_avoidance"
 ]
 {
   Robot {
     translation IS translation
     rotation IS rotation
     children [
-      # The robot base body
+      # Main body of the robot
       DEF BODY Shape {
         appearance PBRAppearance {
-          baseColor 1 0 0       # Red color
+          baseColor 1 0 0    # Red
           roughness 1
           metalness 0
         }
         geometry Box {
-          size 0.2 0.2 0.05     # Adjust as needed
+          size 0.2 0.1 0.05
         }
       }
-      
+
+      # Four wheels, all red, each driven by a RotationalMotor
+      DEF WHEEL1 HingeJoint {
+        jointParameters HingeJointParameters {
+          axis 0 1 0
+          anchor 0.05 0.06 0
+        }
+        device [
+          RotationalMotor {
+            name "wheel1"
+          }
+        ]
+        endPoint Solid {
+          translation 0.05 0.06 0
+          rotation 1 0 0 1.5708
+          children [
+            DEF WHEEL Shape {
+              appearance PBRAppearance {
+                baseColor 1 0 0   # Red wheel
+                roughness 1
+                metalness 0
+              }
+              geometry Cylinder {
+                height 0.02
+                radius 0.04
+                subdivision 24
+              }
+            }
+          ]
+          boundingObject USE WHEEL
+          physics Physics {
+          }
+        }
+      }
+      DEF WHEEL2 HingeJoint {
+        jointParameters HingeJointParameters {
+          axis 0 1 0
+          anchor 0.05 -0.06 0
+        }
+        device [
+          RotationalMotor {
+            name "wheel2"
+          }
+        ]
+        endPoint Solid {
+          translation 0.05 -0.06 0
+          rotation 1 0 0 1.5708
+          children [
+            USE WHEEL
+          ]
+          name "solid(1)"
+          boundingObject USE WHEEL
+          physics Physics {
+          }
+        }
+      }
+      DEF WHEEL3 HingeJoint {
+        jointParameters HingeJointParameters {
+          axis 0 1 0
+          anchor -0.05 0.06 0
+        }
+        device [
+          RotationalMotor {
+            name "wheel3"
+          }
+        ]
+        endPoint Solid {
+          translation -0.05 0.06 0
+          rotation 1 0 0 1.5708
+          children [
+            USE WHEEL
+          ]
+          name "solid(2)"
+          boundingObject USE WHEEL
+          physics Physics {
+          }
+        }
+      }
+      DEF WHEEL4 HingeJoint {
+        jointParameters HingeJointParameters {
+          axis 0 1 0
+          anchor -0.05 -0.06 0
+        }
+        device [
+          RotationalMotor {
+            name "wheel4"
+          }
+        ]
+        endPoint Solid {
+          translation -0.05 -0.06 0
+          rotation 1 0 0 1.5708
+          children [
+            USE WHEEL
+          ]
+          name "solid(3)"
+          boundingObject USE WHEEL
+          physics Physics {
+          }
+        }
+      }
+
+      # Two front distance sensors
+      DEF DS_RIGHT DistanceSensor {
+        translation 0.1 -0.03 0
+        rotation 0 0 1 -0.3
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 1 0 0  # Red
+              roughness 1
+              metalness 0
+            }
+            geometry Box {
+              size 0.01 0.01 0.01
+            }
+          }
+        ]
+        name "ds_right"
+      }
+      DEF DS_LEFT DistanceSensor {
+        translation 0.1 0.03 0
+        rotation 0 0 1 0.3
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 1 0 0  # Red
+              roughness 1
+              metalness 0
+            }
+            geometry Box {
+              size 0.01 0.01 0.01
+            }
+          }
+        ]
+        name "ds_left"
+      }
+
+      # Robotic arm on top of the robot
       # Base joint of the arm (yaw joint)
       DEF ARM_BASE_JOINT HingeJoint {
         jointParameters HingeJointParameters {
-          axis 0 0 1            # Rotation around the vertical axis (z-axis)
-          anchor 0 0 0.05       # Joint anchor on top of the body
+          axis 0 0 1             # Rotate around the vertical axis
+          anchor 0 0 0.05        # On top of the body
         }
         device [
           RotationalMotor {
@@ -40,51 +178,52 @@ PROTO MyRedArmRobot [
           children [
             DEF ARM_SEGMENT_1 Shape {
               appearance PBRAppearance {
-                baseColor 1 0 0   # Red color
+                baseColor 1 0 0    # Red arm segment
                 roughness 1
                 metalness 0
               }
               geometry Box {
-                size 0.05 0.05 0.2  # First arm segment
+                size 0.05 0.05 0.15  # Lengthy first segment
               }
             }
           ]
           boundingObject USE ARM_SEGMENT_1
           physics Physics {
-            # Add mass/density if needed. Using defaults here.
           }
-        }
-      }
-      
-      # Elbow joint of the arm
-      DEF ARM_ELBOW_JOINT HingeJoint {
-        jointParameters HingeJointParameters {
-          axis 0 1 0            # Rotation around the y-axis
-          anchor 0 0 0.15       # Located at the top end of the first segment
-        }
-        device [
-          RotationalMotor {
-            name "arm_elbow_motor"
-          }
-        ]
-        endPoint Solid {
-          translation 0 0 0.15
-          rotation 0 0 1 0
+
+          # Elbow joint of the arm
           children [
-            DEF ARM_SEGMENT_2 Shape {
-              appearance PBRAppearance {
-                baseColor 1 0 0   # Red color
-                roughness 1
-                metalness 0
+            DEF ARM_ELBOW_JOINT HingeJoint {
+              jointParameters HingeJointParameters {
+                axis 0 1 0         # Bend around y-axis
+                anchor 0 0 0.125   # End of the first segment
               }
-              geometry Box {
-                size 0.04 0.04 0.1 # Second arm segment (could serve as a "forearm")
+              device [
+                RotationalMotor {
+                  name "arm_elbow_motor"
+                }
+              ]
+              endPoint Solid {
+                translation 0 0 0.125
+                rotation 0 0 1 0
+                children [
+                  DEF ARM_SEGMENT_2 Shape {
+                    appearance PBRAppearance {
+                      baseColor 1 0 0  # Red arm second segment
+                      roughness 1
+                      metalness 0
+                    }
+                    geometry Box {
+                      size 0.04 0.04 0.1
+                    }
+                  }
+                ]
+                boundingObject USE ARM_SEGMENT_2
+                physics Physics {
+                }
               }
             }
           ]
-          boundingObject USE ARM_SEGMENT_2
-          physics Physics {
-          }
         }
       }
     ]
@@ -93,6 +232,6 @@ PROTO MyRedArmRobot [
       density -1
       mass IS bodyMass
     }
-    controller "my_robot_controller" # Replace with your controller if desired
+    controller IS controller
   }
 }
