@@ -1,0 +1,98 @@
+#VRML_SIM R2024a utf8
+# This PROTO defines a red robot with a simple two-segment robotic arm on top.
+
+PROTO MyRedArmRobot [
+  field SFVec3f    translation   0 0 0
+  field SFRotation rotation      0 0 1 0
+  field SFFloat    bodyMass      1
+]
+{
+  Robot {
+    translation IS translation
+    rotation IS rotation
+    children [
+      # The robot base body
+      DEF BODY Shape {
+        appearance PBRAppearance {
+          baseColor 1 0 0       # Red color
+          roughness 1
+          metalness 0
+        }
+        geometry Box {
+          size 0.2 0.2 0.05     # Adjust as needed
+        }
+      }
+      
+      # Base joint of the arm (yaw joint)
+      DEF ARM_BASE_JOINT HingeJoint {
+        jointParameters HingeJointParameters {
+          axis 0 0 1            # Rotation around the vertical axis (z-axis)
+          anchor 0 0 0.05       # Joint anchor on top of the body
+        }
+        device [
+          RotationalMotor {
+            name "arm_base_motor"
+          }
+        ]
+        endPoint Solid {
+          translation 0 0 0.05
+          rotation 0 0 1 0
+          children [
+            DEF ARM_SEGMENT_1 Shape {
+              appearance PBRAppearance {
+                baseColor 1 0 0   # Red color
+                roughness 1
+                metalness 0
+              }
+              geometry Box {
+                size 0.05 0.05 0.2  # First arm segment
+              }
+            }
+          ]
+          boundingObject USE ARM_SEGMENT_1
+          physics Physics {
+            # Add mass/density if needed. Using defaults here.
+          }
+        }
+      }
+      
+      # Elbow joint of the arm
+      DEF ARM_ELBOW_JOINT HingeJoint {
+        jointParameters HingeJointParameters {
+          axis 0 1 0            # Rotation around the y-axis
+          anchor 0 0 0.15       # Located at the top end of the first segment
+        }
+        device [
+          RotationalMotor {
+            name "arm_elbow_motor"
+          }
+        ]
+        endPoint Solid {
+          translation 0 0 0.15
+          rotation 0 0 1 0
+          children [
+            DEF ARM_SEGMENT_2 Shape {
+              appearance PBRAppearance {
+                baseColor 1 0 0   # Red color
+                roughness 1
+                metalness 0
+              }
+              geometry Box {
+                size 0.04 0.04 0.1 # Second arm segment (could serve as a "forearm")
+              }
+            }
+          ]
+          boundingObject USE ARM_SEGMENT_2
+          physics Physics {
+          }
+        }
+      }
+    ]
+    boundingObject USE BODY
+    physics Physics {
+      density -1
+      mass IS bodyMass
+    }
+    controller "my_robot_controller" # Replace with your controller if desired
+  }
+}
